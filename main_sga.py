@@ -1,8 +1,6 @@
+import matplotlib.pyplot as plt
 import algoritmos_sga as al
 import networkx as nx
-import matplotlib.pyplot as plt
-import matplotlib
-
 
 NROWS = 7
 NCOLUMNS = 10
@@ -12,28 +10,34 @@ edges_df = al.generate_warehouse_edges(NROWS,NCOLUMNS,IPASILLOS)
 nodes_df = al.generate_warehouse_nodes(NROWS, NCOLUMNS)
 print(nodes_df)
 
-pos = nodes_df.drop(columns=['Ref'])
+pos = nodes_df.drop(columns=['Ref', 'color'])
 pos = pos.set_index('Node').T.to_dict('list')
 
 G = nx.from_pandas_edgelist(edges_df,
                             source='Source',
                             target='Target',
                             edge_attr=["weight", "color"])
+nx.set_node_attributes(G, 'blue', name='color')
 
-tsp = nx.approximation.traveling_salesman_problem
-path = tsp(G, nodes=["11","46","83"])
-print("Path",path, len(path))
+path, nodos = al.get_references_tsp(edges_df, nodes_df, [101,103,119,150,170])
+print('Nodos', nodos, 'Coste', len(path), 'Path', path)
 
-for i in range(len(path)-1):
+for i in range(len(path)-1): #Cambiar color del path
     G.add_edge(path[i],path[i+1],color='red')
 
-edges = G.edges()
-colors = [G[u][v]['color'] for u, v in edges]
-widths = [G[u][v]['weight'] for u, v in edges]
+for i in range(len(nodos)): #Cambiar color de los nodos
+    G.add_node(nodos[i], color='red')
 
-widths = [x * 3 for x in widths]
+edges = G.edges() #Get attributes of edges
+edge_colors = [G[u][v]['color'] for u, v in edges]
+edge_widths = [G[u][v]['weight'] for u, v in edges]
 
-nx.draw_networkx(G,pos=pos, node_size = 350, linewidths=5, edge_color=colors, width=widths, font_size=10, font_family='Lucida Sans')
+edge_widths = [x * 3 for x in edge_widths]
 
-indices = al.get_references_optimize(edges_df, nodes_df, [101,102,103])
-print(indices, type(indices[0]))
+knodes = G.nodes() #Get attributes of nodes
+knode_colors = [knodes[u]['color'] for u in knodes]
+
+plt.figure()
+nx.draw_networkx(G,pos=pos, node_size = 350, node_color = knode_colors, linewidths=5, edge_color=edge_colors, width=edge_widths, font_size=10, font_family='Lucida Sans')
+plt.show()
+

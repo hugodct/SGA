@@ -20,7 +20,7 @@ def generate_warehouse_edges(NROWS, NCOLUMNS, IPASILLOS):
             edges_df.loc[k] = [nodo_anterior, nodo_actual, "Undirected", 1, "black"]
             k+=1
 
-    for j in range(1, NROWS+1):
+    for j in range(1, NROWS+1): #Generar edges de filas
         if j in IPASILLOS:
             for i in range(1, NCOLUMNS):
                 nodo_actual = str(i+1) + str(j)
@@ -34,29 +34,34 @@ def generate_warehouse_edges(NROWS, NCOLUMNS, IPASILLOS):
 def generate_warehouse_nodes(NROWS, NCOLUMNS):
     #GENERAR EL ALMACEN - NODES
     n = NROWS * NCOLUMNS
-    nodes_df = pd.DataFrame(columns=['Node', 'PosX', 'PosY', 'Ref'])
+    nodes_df = pd.DataFrame(columns=['Node', 'PosX', 'PosY', 'Ref', 'color'])
 
     k = 0
     for i in range(1, NROWS+1):
         for j in range(1, NCOLUMNS+1):
             node = str(j) + str(i)
-            nodes_df.loc[k] = [node, j, i, k+101]
+            nodes_df.loc[k] = [node, j, i, k+101, 'blue']
             k += 1
 
     return nodes_df
 
-def get_references_optimize(edges_df, nodes_df, refs):
+def get_references_tsp(edges_df, nodes_df, refs):
     #CALCULATE OPTIMUM PICKING FOR LIST OF REFS
     G = nx.from_pandas_edgelist(edges_df,
                                 source='Source',
                                 target='Target',
                                 edge_attr=["weight", "color"])
 
-    indices = []
+    indices = [] #Get nodes from list of refs
     for i in range(len(refs)):
         indice = nodes_df.index[nodes_df['Ref'] == refs[i]]
         indices.append(indice[0])
 
+    nodos = [] #Idem
+    for i in range(len(refs)):
+        nodo = nodes_df.iloc[indices[i],0]
+        nodos.append(nodo)
+
     tsp = nx.approximation.traveling_salesman_problem
-    path = tsp(G, nodes=["11", "46", "83"])
-    return indices
+    path = tsp(G, nodes=nodos, cycle=True)
+    return path, nodos
